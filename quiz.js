@@ -1,6 +1,7 @@
 'use strict';
 
 $(document).ready(function(){
+  getToken();
   render();
   handleStartQuiz();
   handleEvaluateAnswer();
@@ -8,37 +9,62 @@ $(document).ready(function(){
   retakeQuiz();
 });
 
-// In-memory database of questions
-const QUESTIONS = [
-  {question: 'What is the character\'s name in Metroid?',
-    answers: ['Justin Bailey', 'Samus Aran', 'Langden Olger', 'Mother Brain'],
-    correctAnswer: 'Samus Aran'
-  },
-  {question: 'Which Triforce did Zelda posess?',
-    answers: ['Wisdom', 'Power', 'Speed', 'Heart'],
-    correctAnswer: 'Wisdom'
-  },
-  {question: 'Who do you fight before Mike Tyson in Mike Tyson\'s Punch Out?',
-    answers: ['Sand Man', 'Soda Popinski', 'King Hippo', 'Super Macho Man'],
-    correctAnswer: 'Super Macho Man'
-  },
-  {question: 'What year did Dr. Light create Mega Man?',
-    answers: ['200Y', '200X', '200Z', '200M'],
-    correctAnswer: '200X'
-  },
-  {question: 'What level do you reach after level 99 in Duck Hunt?',
-    answers: [98, 0, 1, 100],
-    correctAnswer: 0
-  }
-];
-
 //store state at 1st question
-let STORE = {       
-  questions: QUESTIONS,
+let STORE = {      
+  categories: [], 
+  // questions: QUESTIONS,
   currentIndex: null,
   ANSWERS: [],
   totalCorrect: 0
 };
+
+const QUESTIONS = [];
+
+//API call
+const BASE_URL = 'https://opentdb.com/';
+const QUESTION_PATH = '/api.php';
+const SESSION_TOKEN = '';
+
+function getToken() {
+  $.getJSON('https://opentdb.com/api_token.php?command=request', logToken);
+}
+
+function logToken(response) {
+  if(response.response_code !== 0){
+    alert('Sorry, Open Trivia API is down. Please try again later!');
+  } 
+  const token =  response.token;
+  let SESSION_TOKEN = token;
+  console.log(SESSION_TOKEN);
+  getCategories();
+}
+
+function getCategories() {
+  $.getJSON('https://opentdb.com/api_category.php', logCategories);
+}
+
+function logCategories(response) {
+  let arr = [];
+  const categories = response.trivia_categories.map(function(category){
+    let obj = {
+      id: category.id,
+      name: category.name
+    };
+    arr.push(obj);
+  });
+  STORE.categories = arr;
+  console.log(STORE.categories);
+  generateForm();
+}
+
+// In-memory database of questions
+const templateQuestions = [
+  {question: 'What is the character\'s name in Metroid?',
+    answers: ['Justin Bailey', 'Samus Aran', 'Langden Olger', 'Mother Brain'],
+    correctAnswer: 'Samus Aran'
+  },];
+
+
 
 function render(){
   //shows start page
@@ -68,8 +94,23 @@ function render(){
   }
 }
 
+function generateForm(){
+  $('.user-choice').html(userInputTemplate());
+}
+
 // Template generators
 // displays question for current page 
+function userInputTemplate() {
+  const possibleCategories = STORE.categories.map(function(category){
+    return `<option value="${category.id}">${category.name}</option>`;
+  }).join();
+  return `<form>
+  <select name="categories"><option value="select">Select Your Category</option>${possibleCategories}
+  </select>
+  <input type="text" name="number">
+  </form>`;
+}
+
 function template() { 
   
   const possibleAnswers = QUESTIONS[STORE.currentIndex].answers.map(function(val, index){
