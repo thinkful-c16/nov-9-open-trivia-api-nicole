@@ -2,7 +2,7 @@
 
 $(document).ready(function(){
   getToken();
-  render();
+  // render();
   handleStartQuiz();
   handleEvaluateAnswer();
   continueFromResult ();
@@ -12,13 +12,16 @@ $(document).ready(function(){
 //store state at 1st question
 let STORE = {      
   categories: [], 
-  // questions: QUESTIONS,
+  questions: QUESTIONS,
   currentIndex: null,
   ANSWERS: [],
-  totalCorrect: 0
+  totalCorrect: 0,
+  activeCategory: null,
+  activeQuestionNumber: 0,
+  activeDifficulty: null
 };
 
-const QUESTIONS = [];
+let QUESTIONS = [];
 
 //API call
 const BASE_URL = 'https://opentdb.com/';
@@ -36,11 +39,16 @@ function logToken(response) {
   const token =  response.token;
   let SESSION_TOKEN = token;
   console.log(SESSION_TOKEN);
-  getCategories();
+  fetchCategories();
 }
 
-function getCategories() {
+function fetchCategories() {
   $.getJSON('https://opentdb.com/api_category.php', logCategories);
+}
+
+function fetchQuestions() {
+  console.log('https://opentdb.com/api.php?amount='+STORE.activeQuestionNumber+'&category='+STORE.activeCategory+'&difficulty='+STORE.activeDifficulty+'&type=multiple');
+  $.getJSON('https://opentdb.com/api.php?amount='+STORE.activeQuestionNumber+'&category='+STORE.activeCategory+'&difficulty='+STORE.activeDifficulty+'&type=multiple', logQuestions);
 }
 
 function logCategories(response) {
@@ -53,12 +61,24 @@ function logCategories(response) {
     arr.push(obj);
   });
   STORE.categories = arr;
-  console.log(STORE.categories);
   generateForm();
 }
 
-function getQuestions(response) {
-
+function logQuestions(response){
+  console.log(response);
+  let arr = [];
+  const questions = response.results.forEach(function(value, index){
+    let obj = {
+      i: index,
+      question: value.question,
+      correctAnswer: value.correct_answer,
+      incorrectAnswers: [value.incorrect_answers[0], value.incorrect_answers[1], value.incorrect_answers[2]]
+    };
+    console.log(obj);
+    arr.push(obj);
+  });
+  QUESTIONS = arr;
+console.log(QUESTIONS);
 }
 
 // In-memory database of questions
@@ -70,33 +90,33 @@ function getQuestions(response) {
 
 
 
-function render(){
-  //shows start page
-  if (STORE.currentIndex === null){
-    $('.start').removeClass('hidden');
-    $('.question-page').addClass('hidden');
-    $('.question-result-page').addClass('hidden');
-    $('.final-result-page').addClass('hidden');
-  //shows question pages
-  } else if (STORE.currentIndex < 5 && (STORE.ANSWERS.length-1) !== STORE.currentIndex) {
-    $('.start').addClass('hidden');
-    $('.question-page').removeClass('hidden');
-    $('.question-result-page').addClass('hidden');
-    $('.final-result-page').addClass('hidden');
-  }
-  else if (STORE.currentIndex < 5 && (STORE.ANSWERS.length-1) === STORE.currentIndex) {
-    $('.start').addClass('hidden');
-    $('.question-page').addClass('hidden');
-    $('.question-result-page').removeClass('hidden');
-    $('.final-result-page').addClass('hidden');
-  //shows final result page
-  } else {
-    $('.start').addClass('hidden');
-    $('.question-page').addClass('hidden');
-    $('.question-result-page').addClass('hidden');
-    $('.final-result-page').removeClass('hidden');
-  }
-}
+// function render(){
+//   //shows start page
+//   if (STORE.currentIndex === null){
+//     $('.start').removeClass('hidden');
+//     $('.question-page').addClass('hidden');
+//     $('.question-result-page').addClass('hidden');
+//     $('.final-result-page').addClass('hidden');
+//   //shows question pages
+//   } else if (STORE.currentIndex < 5 && (STORE.ANSWERS.length-1) !== STORE.currentIndex) {
+//     $('.start').addClass('hidden');
+//     $('.question-page').removeClass('hidden');
+//     $('.question-result-page').addClass('hidden');
+//     $('.final-result-page').addClass('hidden');
+//   }
+//   else if (STORE.currentIndex < 5 && (STORE.ANSWERS.length-1) === STORE.currentIndex) {
+//     $('.start').addClass('hidden');
+//     $('.question-page').addClass('hidden');
+//     $('.question-result-page').removeClass('hidden');
+//     $('.final-result-page').addClass('hidden');
+//   //shows final result page
+//   } else {
+//     $('.start').addClass('hidden');
+//     $('.question-page').addClass('hidden');
+//     $('.question-result-page').addClass('hidden');
+//     $('.final-result-page').removeClass('hidden');
+//   }
+// }
 
 function generateForm(){
   $('.user-choice').html(userInputTemplate());
@@ -220,14 +240,17 @@ function handleStartQuiz() {
     if ($('select[name=categories]').val() === 'Select Your Category' 
         || $('select[name=numbers]').val() === 'Select Number of Questions' 
         || $('select[name=difficulty]').val() === 'Select Difficulty') {
-      alert('Error: Please make your selections!');
-    }
-    // }
-    // STORE.currentIndex=STORE.currentIndex++;
-    // render();
-    // generateNextQuestion();
+      alert('Error: Please make your selections!');}
+    STORE.activeCategory = $('select[name=categories]').val(),
+    STORE.activeQuestionNumber = $('select[name=numbers]').val(),
+    STORE.activeDifficulty = $('select[name=difficulty]').val().toLowerCase(),
+    fetchQuestions();
   });
 }
+// }
+// STORE.currentIndex=STORE.currentIndex++;
+// render();
+// generateNextQuestion();
 
 function generateNextQuestion(){ 
   $('.question-page').html(template());
