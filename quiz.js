@@ -57,12 +57,16 @@ function logCategories(response) {
   generateForm();
 }
 
+function getQuestions(response) {
+  
+}
+
 // In-memory database of questions
-const templateQuestions = [
-  {question: 'What is the character\'s name in Metroid?',
-    answers: ['Justin Bailey', 'Samus Aran', 'Langden Olger', 'Mother Brain'],
-    correctAnswer: 'Samus Aran'
-  },];
+// const templateQuestions = [
+//   {question: 'What is the character\'s name in Metroid?',
+//     answers: ['Justin Bailey', 'Samus Aran', 'Langden Olger', 'Mother Brain'],
+//     correctAnswer: 'Samus Aran'
+//   },];
 
 
 
@@ -105,9 +109,17 @@ function userInputTemplate() {
     return `<option value="${category.id}">${category.name}</option>`;
   }).join();
   return `<form>
-  <select name="categories"><option value="select">Select Your Category</option>${possibleCategories}
+  <select name="categories"><option value="select-category">Select Your Category</option>${possibleCategories}
   </select>
-  <input type="text" name="number">
+  <select name="numbers"><option value="select-number">Select Number of Questions</option>
+  <option value="select-number">5</option>
+  <<option value="select-number">10</option>
+  <option value="select-number">15</option>
+  <option value="select-number">20</option></select>
+  <select name="difficulty"><option value="select-difficulty">Select Difficulty</option>
+  <option value="select-difficulty">Easy</option>
+  <<option value="select-difficulty">Medium</option>
+  <option value="select-difficulty">Difficult</option></select>
   </form>`;
 }
 
