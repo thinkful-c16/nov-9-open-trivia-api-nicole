@@ -1,18 +1,20 @@
 'use strict';
+/*global $*/
 
 $(document).ready(function(){
   getToken();
-  // render();
+  render();
   handleStartQuiz();
-  handleEvaluateAnswer();
-  continueFromResult ();
-  retakeQuiz();
+  // handleEvaluateAnswer();
+  // continueFromResult ();
+  // retakeQuiz();
 });
 
 //store state at 1st question
+
 let STORE = {      
   categories: [], 
-  questions: QUESTIONS,
+  questions: [],
   currentIndex: null,
   ANSWERS: [],
   totalCorrect: 0,
@@ -21,12 +23,10 @@ let STORE = {
   activeDifficulty: null
 };
 
-let QUESTIONS = [];
-
 //API call
 const BASE_URL = 'https://opentdb.com/';
 const QUESTION_PATH = '/api.php';
-const SESSION_TOKEN = '';
+let SESSION_TOKEN = '';
 
 function getToken() {
   $.getJSON('https://opentdb.com/api_token.php?command=request', logToken);
@@ -37,8 +37,7 @@ function logToken(response) {
     alert('Sorry, Open Trivia API is down. Please try again later!');
   } 
   const token =  response.token;
-  let SESSION_TOKEN = token;
-  console.log(SESSION_TOKEN);
+  SESSION_TOKEN = token;
   fetchCategories();
 }
 
@@ -47,7 +46,6 @@ function fetchCategories() {
 }
 
 function fetchQuestions() {
-  console.log('https://opentdb.com/api.php?amount='+STORE.activeQuestionNumber+'&category='+STORE.activeCategory+'&difficulty='+STORE.activeDifficulty+'&type=multiple');
   $.getJSON('https://opentdb.com/api.php?amount='+STORE.activeQuestionNumber+'&category='+STORE.activeCategory+'&difficulty='+STORE.activeDifficulty+'&type=multiple', logQuestions);
 }
 
@@ -65,58 +63,49 @@ function logCategories(response) {
 }
 
 function logQuestions(response){
-  console.log(response);
   let arr = [];
   const questions = response.results.forEach(function(value, index){
     let obj = {
-      i: index,
       question: value.question,
       correctAnswer: value.correct_answer,
-      incorrectAnswers: [value.incorrect_answers[0], value.incorrect_answers[1], value.incorrect_answers[2]]
+      answers: [value.correct_answer, value.incorrect_answers[0], value.incorrect_answers[1], value.incorrect_answers[2]]
     };
-    console.log(obj);
     arr.push(obj);
   });
-  QUESTIONS = arr;
-console.log(QUESTIONS);
+  STORE.questions = arr;
+  console.log(STORE.questions);
+  STORE.currentIndex++;
+  generateNextQuestion();
+  render();
 }
 
-// In-memory database of questions
-// const templateQuestions = [
-//   {question: 'What is the character\'s name in Metroid?',
-//     answers: ['Justin Bailey', 'Samus Aran', 'Langden Olger', 'Mother Brain'],
-//     correctAnswer: 'Samus Aran'
-//   },];
-
-
-
-// function render(){
-//   //shows start page
-//   if (STORE.currentIndex === null){
-//     $('.start').removeClass('hidden');
-//     $('.question-page').addClass('hidden');
-//     $('.question-result-page').addClass('hidden');
-//     $('.final-result-page').addClass('hidden');
-//   //shows question pages
-//   } else if (STORE.currentIndex < 5 && (STORE.ANSWERS.length-1) !== STORE.currentIndex) {
-//     $('.start').addClass('hidden');
-//     $('.question-page').removeClass('hidden');
-//     $('.question-result-page').addClass('hidden');
-//     $('.final-result-page').addClass('hidden');
-//   }
-//   else if (STORE.currentIndex < 5 && (STORE.ANSWERS.length-1) === STORE.currentIndex) {
-//     $('.start').addClass('hidden');
-//     $('.question-page').addClass('hidden');
-//     $('.question-result-page').removeClass('hidden');
-//     $('.final-result-page').addClass('hidden');
-//   //shows final result page
-//   } else {
-//     $('.start').addClass('hidden');
-//     $('.question-page').addClass('hidden');
-//     $('.question-result-page').addClass('hidden');
-//     $('.final-result-page').removeClass('hidden');
-//   }
-// }
+function render(){
+  //shows start page
+  if (STORE.currentIndex === null){
+    $('.start').removeClass('hidden');
+    $('.question-page').addClass('hidden');
+    $('.question-result-page').addClass('hidden');
+    $('.final-result-page').addClass('hidden');
+  //shows question pages
+  } else if (STORE.currentIndex < STORE.activeQuestionNumber-1 && (STORE.ANSWERS.length-1) !== STORE.currentIndex) {
+    $('.start').addClass('hidden');
+    $('.question-page').removeClass('hidden');
+    $('.question-result-page').addClass('hidden');
+    $('.final-result-page').addClass('hidden');
+  }
+  else if (STORE.currentIndex < STORE.activeQuestionNumber-1 && (STORE.ANSWERS.length-1) === STORE.currentIndex) {
+    $('.start').addClass('hidden');
+    $('.question-page').addClass('hidden');
+    $('.question-result-page').removeClass('hidden');
+    $('.final-result-page').addClass('hidden');
+  //shows final result page
+  } else {
+    $('.start').addClass('hidden');
+    $('.question-page').addClass('hidden');
+    $('.question-result-page').addClass('hidden');
+    $('.final-result-page').removeClass('hidden');
+  }
+}
 
 function generateForm(){
   $('.user-choice').html(userInputTemplate());
@@ -128,7 +117,7 @@ function userInputTemplate() {
   const possibleCategories = STORE.categories.map(function(category){
     return `<option value="${category.id}">${category.name}</option>`;
   }).join();
-  return `<form>
+  return `<form id="quiz-form">
   <select name="categories"><option value="Select Your Category">Select Your Category</option>${possibleCategories}
   </select>
   <select name="numbers"><option value="Select Number of Questions">Select Number of Questions</option>
@@ -145,7 +134,7 @@ function userInputTemplate() {
 }
 
 function template() { 
-  const possibleAnswers = QUESTIONS[STORE.currentIndex].answers.map(function(val, index){
+  const possibleAnswers = STORE.questions[STORE.currentIndex].answers.map(function(val, index){
     return `
       <div><input type='radio' name='answer' value='${val}' data-index-attr='${index}' required />
         <span class='possible-answers'>
@@ -156,21 +145,21 @@ function template() {
   }).join('');
   return `
       <div class="question-container">
-        <h1 class="question-title">${QUESTIONS[STORE.currentIndex].question}</h1>
+        <h1 class="question-title">${STORE.questions[STORE.currentIndex].question}</h1>
         <form id="answer-options">
           ${possibleAnswers}
           <div><input type="submit" value="Next"></div>
           
           <div>
-          <p>Current Score:${STORE.totalCorrect} / ${QUESTIONS.length}</p>
-          <p>Question:${STORE.currentIndex+1} / ${QUESTIONS.length}</p> 
+          <p>Current Score:${STORE.totalCorrect} / ${STORE.questions.length}</p>
+          <p>Question:${STORE.currentIndex+1} / ${STORE.questions.length}</p> 
       </div>
       </form>
     </div>`; 
 }
 
 function resultTemplate(){
-  if (STORE.ANSWERS[STORE.ANSWERS.length-1] === QUESTIONS[STORE.currentIndex].correctAnswer) {
+  if (STORE.ANSWERS[STORE.ANSWERS.length-1] === STORE.questions[STORE.currentIndex].correctAnswer) {
     return `
       <div>
         <h1>Congratulations!</h1>
@@ -186,7 +175,7 @@ function resultTemplate(){
       <div>
         <h1>Sorry, that's incorrect!</h1>
         <div class="message">
-        The correct answer was ${QUESTIONS[STORE.currentIndex].correctAnswer}
+        The correct answer was ${STORE.questions[STORE.currentIndex].correctAnswer}
         <div>
         <button type="submit" class="next continue">Continue</button>
       </div>
@@ -196,7 +185,7 @@ function resultTemplate(){
 
 function finalResultTempalte(){
   return `
-    <h1>You scored ${STORE.totalCorrect} / ${QUESTIONS.length}</h1>
+    <h1>You scored ${STORE.totalCorrect} / ${STORE.questions.length}</h1>
     <div class="image">
       <img src="" alt="alt image text  DONT FORGET to update">
     </div>
@@ -207,7 +196,6 @@ function finalResultTempalte(){
 
 function resetStore(){
   Object.assign(STORE,({currentIndex:null, ANSWERS:[], totalCorrect: 0} ));
-  
 }
 
 function retakeQuiz (){
@@ -223,7 +211,7 @@ function continueFromResult (){
   $('.question-result-page').on('click', '.continue', function(){
     nextQuestion();
     ///if at end, call finalresult tempalte
-    if (STORE.currentIndex < 5){
+    if (STORE.currentIndex < STORE.activeQuestionNumber){
       generateNextQuestion();
       render();
     } else {
@@ -235,7 +223,7 @@ function continueFromResult (){
 
 //runs render at null state index (start page)
 function handleStartQuiz() {
-  $('.user-choice').on('submit', function(e){
+  $('.user-choice').on('submit', '#quiz-form', function(e){
     e.preventDefault();
     if ($('select[name=categories]').val() === 'Select Your Category' 
         || $('select[name=numbers]').val() === 'Select Number of Questions' 
@@ -244,13 +232,13 @@ function handleStartQuiz() {
     STORE.activeCategory = $('select[name=categories]').val(),
     STORE.activeQuestionNumber = $('select[name=numbers]').val(),
     STORE.activeDifficulty = $('select[name=difficulty]').val().toLowerCase(),
+    console.log(STORE);
     fetchQuestions();
+    // render();
+    // generateNextQuestion();
   });
 }
-// }
-// STORE.currentIndex=STORE.currentIndex++;
-// render();
-// generateNextQuestion();
+
 
 function generateNextQuestion(){ 
   $('.question-page').html(template());
@@ -269,7 +257,7 @@ function handleEvaluateAnswer() {
   $('.question-page').on('submit', '#answer-options', function(event){
     event.preventDefault();
     STORE.ANSWERS.push($('input[name="answer"]:checked').val());
-    //checkAnswer();
+    nextQuestion();
     generateResult();
     render();
   });
@@ -281,7 +269,7 @@ function generateResult(){
 }
 
 function currentScore(){
-  if (STORE.ANSWERS[STORE.ANSWERS.length-1] === QUESTIONS[STORE.currentIndex].correctAnswer) {
+  if (STORE.ANSWERS[STORE.ANSWERS.length-1] === STORE.questions[STORE.currentIndex].correctAnswer) {
     STORE.totalCorrect++;
   }
 }
