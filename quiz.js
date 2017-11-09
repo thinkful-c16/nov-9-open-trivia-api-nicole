@@ -58,7 +58,7 @@ function logCategories(response) {
 }
 
 function getQuestions(response) {
-  
+
 }
 
 // In-memory database of questions
@@ -109,22 +109,22 @@ function userInputTemplate() {
     return `<option value="${category.id}">${category.name}</option>`;
   }).join();
   return `<form>
-  <select name="categories"><option value="select-category">Select Your Category</option>${possibleCategories}
+  <select name="categories"><option value="Select Your Category">Select Your Category</option>${possibleCategories}
   </select>
-  <select name="numbers"><option value="select-number">Select Number of Questions</option>
-  <option value="select-number">5</option>
-  <<option value="select-number">10</option>
-  <option value="select-number">15</option>
-  <option value="select-number">20</option></select>
-  <select name="difficulty"><option value="select-difficulty">Select Difficulty</option>
-  <option value="select-difficulty">Easy</option>
-  <<option value="select-difficulty">Medium</option>
-  <option value="select-difficulty">Difficult</option></select>
+  <select name="numbers"><option value="Select Number of Questions">Select Number of Questions</option>
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="15">15</option>
+    <option value="20">20</option></select>
+  <select name="difficulty"><option value="Select Difficulty">Select Difficulty</option>
+    <option value="Easy">Easy</option>
+    <option value="Medium">Medium</option>
+    <option value="Difficult">Difficult</option></select>
+  <br><br><input type="submit" value="Start Quiz">
   </form>`;
 }
 
 function template() { 
-  
   const possibleAnswers = QUESTIONS[STORE.currentIndex].answers.map(function(val, index){
     return `
       <div><input type='radio' name='answer' value='${val}' data-index-attr='${index}' required />
@@ -215,11 +215,17 @@ function continueFromResult (){
 
 //runs render at null state index (start page)
 function handleStartQuiz() {
-  $('#start-button').on('click', function(){
-    //e.preventDefault();
-    STORE.currentIndex=STORE.currentIndex++;
-    render();
-    generateNextQuestion();
+  $('.user-choice').on('submit', function(e){
+    e.preventDefault();
+    if ($('select[name=categories]').val() === 'Select Your Category' 
+        || $('select[name=numbers]').val() === 'Select Number of Questions' 
+        || $('select[name=difficulty]').val() === 'Select Difficulty') {
+      alert('Error: Please make your selections!');
+    }
+    // }
+    // STORE.currentIndex=STORE.currentIndex++;
+    // render();
+    // generateNextQuestion();
   });
 }
 
